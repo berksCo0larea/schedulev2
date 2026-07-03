@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Schedule</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #000;
+  --surface: #0e0e0e;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.13);
+  --text: #fff;
+  --text2: #7a7a7a;
+  --text3: #3a3a3a;
+  --red: #ff0040;
+  --red-dim: rgba(255,0,64,0.1);
+  --mono: 'Space Mono', 'Courier New', monospace;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--mono);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(255,255,255,0.022) 1px, transparent 1px);
+  background-size: 24px 24px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.wrap {
+  max-width: 660px;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 4rem;
+  position: relative;
+  z-index: 1;
+}
+
+/* HEADER */
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 2.5rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 1.25rem;
+  animation: fadeDown 0.5s ease both;
+}
+.title {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+.title .dot { color: var(--red); }
+.live-clock {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+#time-display {
+  display: block;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+#date-display {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--text2);
+  margin-top: 2px;
+}
+
+/* UPLOAD ZONE */
+.upload-zone {
+  position: relative;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  padding: 3rem 1.5rem;
+  text-align: center;
+  cursor: pointer;
+  overflow: hidden;
+  transition: border-color 0.2s;
+  margin-bottom: 1.25rem;
+  animation: fadeUp 0.4s 0.1s ease both;
+}
+.upload-zone::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(255,255,255,0.038) 1px, transparent 1px);
+  background-size: 16px 16px;
+  pointer-events: none;
+  transition: background-image 0.2s;
+}
+.upload-zone::after {
+  content: '';
+  position: absolute;
+  top: -60px;
+  left: 0; right: 0;
+  height: 60px;
+  background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.03), transparent);
+  animation: scan 3.5s linear infinite;
+  pointer-events: none;
+}
+@keyframes scan { to { top: 100%; } }
+.upload-zone:hover { border-color: rgba(255,0,64,0.5); }
+.upload-zone:hover::before {
+  background-image: radial-gradient(circle, rgba(255,0,64,0.055) 1px, transparent 1px);
+}
+.upload-icon {
+  width: 46px; height: 46px;
+  border: 1px solid var(--border2);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 14px;
+  position: relative; z-index: 1;
+}
+.upload-icon svg { width: 20px; height: 20px; stroke: var(--text2); fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.upload-zone h3 {
+  font-size: 13px; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  margin-bottom: 6px; position: relative; z-index: 1;
+}
+.upload-zone p {
+  font-size: 12px; color: var(--text2);
+  letter-spacing: 0.03em; margin-bottom: 18px;
+  position: relative; z-index: 1;
+}
+.upload-or {
+  font-size: 10px; letter-spacing: 0.12em;
+  color: var(--text3); margin: 14px 0 0;
+  position: relative; z-index: 1;
+}
+
+/* BUTTONS */
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 9px 18px;
+  border: 1px solid var(--border2);
+  background: transparent;
+  color: var(--text2);
+  font-size: 11px; font-weight: 700; font-family: var(--mono);
+  letter-spacing: 0.1em; text-transform: uppercase;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.btn:hover { color: var(--text); border-color: rgba(255,255,255,0.28); background: rgba(255,255,255,0.04); }
+.btn.primary { background: var(--red); border-color: var(--red); color: #fff; }
+.btn.primary:hover { background: #d4002f; border-color: #d4002f; }
+.btn-row {
+  display: flex; gap: 8px; flex-wrap: wrap;
+  margin-bottom: 1.25rem; align-items: center;
+  animation: fadeUp 0.4s 0.15s ease both;
+}
+
+/* STATUS BARS */
+.loading-bar {
+  display: flex; align-items: center; gap: 12px;
+  border: 1px solid rgba(255,0,64,0.2);
+  background: rgba(255,0,64,0.05);
+  padding: 12px 16px; margin-bottom: 1.25rem;
+  font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--red);
+}
+.dots { display: flex; gap: 4px; flex-shrink: 0; }
+.dots span {
+  width: 5px; height: 5px; background: var(--red);
+  animation: blink 1s ease infinite;
+}
+.dots span:nth-child(2) { animation-delay: 0.2s; }
+.dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes blink { 0%,80%,100%{opacity:0.15} 40%{opacity:1} }
+
+.err-bar {
+  border: 1px solid rgba(255,0,64,0.3);
+  background: var(--red-dim); padding: 10px 14px;
+  font-size: 11px; letter-spacing: 0.04em; color: var(--red);
+  margin-bottom: 1.25rem;
+}
+
+/* NOW CARD */
+.now-card {
+  border: 1px solid rgba(255,0,64,0.22);
+  background: var(--surface);
+  overflow: hidden; margin-bottom: 12px;
+}
+.now-top { padding: 1.25rem 1.5rem 1rem; }
+.now-eyebrow {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--red); margin-bottom: 10px;
+}
+.live-dot {
+  width: 6px; height: 6px;
+  background: var(--red); border-radius: 50%;
+  animation: pulse-dot 1.5s ease infinite; flex-shrink: 0;
+}
+@keyframes pulse-dot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.3;transform:scale(0.65)} }
+.now-subject {
+  font-size: 28px; font-weight: 700;
+  letter-spacing: -0.04em; line-height: 1.05; margin-bottom: 4px;
+}
+.now-meta { font-size: 11px; color: var(--text2); letter-spacing: 0.05em; }
+
+.now-countdown-row {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  padding: 1rem 1.5rem; border-top: 1px solid var(--border);
+}
+.countdown-display {
+  font-size: 50px; font-weight: 700;
+  letter-spacing: -0.05em; font-variant-numeric: tabular-nums; line-height: 1;
+}
+.countdown-label {
+  font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase;
+  color: var(--text2); margin-bottom: 5px;
+}
+.elapsed-num {
+  font-size: 20px; font-weight: 700;
+  font-variant-numeric: tabular-nums; letter-spacing: -0.03em; color: var(--text2);
+}
+
+/* GLYPH BAR */
+.glyph-bar {
+  display: flex; gap: 3px;
+  padding: 0 1.5rem 1rem;
+}
+.gs { height: 3px; flex: 1; background: var(--border2); }
+.gs.on { background: var(--red); }
+.gs.dim { background: rgba(255,0,64,0.3); }
+
+/* NEXT CARD */
+.next-card {
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1rem 1.5rem; margin-bottom: 12px; gap: 12px;
+}
+.next-eyebrow {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--text2); margin-bottom: 4px;
+}
+.next-subject { font-size: 17px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 2px; }
+.next-meta { font-size: 11px; color: var(--text3); letter-spacing: 0.04em; }
+.next-time {
+  font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums;
+  letter-spacing: -0.04em; white-space: nowrap; flex-shrink: 0;
+}
+
+/* DONE */
+.done-card {
+  border: 1px solid var(--border); background: var(--surface);
+  padding: 1.5rem; text-align: center; margin-bottom: 12px;
+}
+.done-card .big { font-size: 18px; font-weight: 700; letter-spacing: 0.04em; margin-bottom: 4px; }
+.done-card .sub { font-size: 11px; color: var(--text2); letter-spacing: 0.1em; text-transform: uppercase; }
+
+/* SECTION HEADING */
+.section-hd {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--text3); margin: 1.5rem 0 10px;
+  display: flex; align-items: center; gap: 10px;
+}
+.section-hd::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* PERIOD GRID */
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(175px, 1fr)); gap: 8px; }
+.p-card {
+  background: var(--surface); border: 1px solid var(--border); padding: 1rem;
+  position: relative; overflow: hidden;
+}
+.p-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0;
+  height: 1px; background: transparent; transition: background 0.4s;
+}
+.p-card.current { border-color: rgba(255,0,64,0.32); }
+.p-card.current::before { background: var(--red); }
+.p-card.past { opacity: 0.25; }
+.p-card.upcoming { border-left: 2px solid rgba(255,255,255,0.12); }
+.p-num {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.15em;
+  text-transform: uppercase; color: var(--text3); margin-bottom: 4px;
+}
+.p-num.cur { color: var(--red); }
+.p-subject { font-size: 14px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 2px; }
+.p-room { font-size: 11px; color: var(--text3); letter-spacing: 0.03em; }
+.p-time { font-size: 10px; color: var(--text3); letter-spacing: 0.04em; margin: 6px 0 5px; }
+.p-cd { font-size: 12px; font-weight: 700; color: var(--text2); font-variant-numeric: tabular-nums; }
+.p-cd.live { color: var(--red); }
+.p-done { font-size: 10px; color: var(--text3); letter-spacing: 0.08em; text-transform: uppercase; }
+
+/* GRID ENTRY ANIMATION — only fires once on initial grid build */
+.grid-fresh .p-card { animation: fadeUp 0.4s ease both; }
+.grid-fresh .p-card:nth-child(2) { animation-delay: 0.04s; }
+.grid-fresh .p-card:nth-child(3) { animation-delay: 0.08s; }
+.grid-fresh .p-card:nth-child(4) { animation-delay: 0.12s; }
+.grid-fresh .p-card:nth-child(5) { animation-delay: 0.16s; }
+.grid-fresh .p-card:nth-child(6) { animation-delay: 0.20s; }
+.grid-fresh .p-card:nth-child(7) { animation-delay: 0.24s; }
+.grid-fresh .p-card:nth-child(8) { animation-delay: 0.28s; }
+
+/* MANUAL FORM */
+.manual-form {
+  border: 1px solid var(--border2); background: var(--surface);
+  padding: 1.25rem; margin-bottom: 1.25rem;
+  animation: fadeUp 0.3s ease both;
+}
+.manual-form h3 {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.18em;
+  text-transform: uppercase; color: var(--text2); margin-bottom: 12px;
+}
+.m-row { display: flex; gap: 6px; margin-bottom: 6px; flex-wrap: wrap; }
+.m-row input {
+  flex: 1; min-width: 70px; background: var(--bg);
+  border: 1px solid var(--border2); color: var(--text);
+  font-family: var(--mono); font-size: 11px; padding: 8px 10px;
+  letter-spacing: 0.04em; outline: none; transition: border-color 0.15s;
+}
+.m-row input:focus { border-color: rgba(255,255,255,0.28); }
+.m-row input::placeholder { color: var(--text3); }
+.del {
+  background: none; border: 1px solid var(--border); color: var(--text3);
+  cursor: pointer; font-family: var(--mono); font-size: 13px; padding: 0 11px;
+  flex-shrink: 0; transition: color 0.15s, border-color 0.15s;
+}
+.del:hover { color: var(--red); border-color: rgba(255,0,64,0.3); }
+
+/* MISC */
+.img-thumb {
+  height: 44px; width: auto; max-width: 66px;
+  border: 1px solid var(--border2); object-fit: cover;
+}
+.saved-badge {
+  font-size: 10px; letter-spacing: 0.06em; color: var(--text3);
+  padding: 4px 0; white-space: nowrap;
+}
+.key-row {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 14px; position: relative; z-index: 2;
+  max-width: 420px; margin-left: auto; margin-right: auto;
+}
+.key-input {
+  flex: 1; background: var(--bg); border: 1px solid var(--border2);
+  color: var(--text); font-family: var(--mono); font-size: 11px;
+  padding: 9px 12px; letter-spacing: 0.04em; outline: none;
+  transition: border-color 0.15s; min-width: 0;
+}
+.key-input:focus { border-color: rgba(255,255,255,0.28); }
+.key-input::placeholder { color: var(--text3); }
+.key-link {
+  white-space: nowrap; font-size: 10px; font-weight: 700;
+  font-family: var(--mono); letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--red); text-decoration: none; flex-shrink: 0; padding: 9px 0;
+}
+.key-link:hover { text-decoration: underline; }
+  border: 1px solid rgba(245,166,35,0.3);
+  background: rgba(245,166,35,0.07);
+  padding: 12px 16px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: #f5a623;
+  margin-bottom: 1.25rem;
+  line-height: 1.6;
+  animation: fadeUp 0.4s ease both;
+}
+.warn-bar strong {
+  display: block;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+  font-size: 10px; letter-spacing: 0.06em; color: var(--text3);
+  padding: 4px 0; white-space: nowrap;
+}
+.empty-hint {
+  text-align: center; color: var(--text3); font-size: 11px;
+  letter-spacing: 0.08em; text-transform: uppercase; padding: 2rem 0;
+}
+
+@keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+@keyframes fadeDown { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="header">
+    <div class="title">Schedule<span class="dot">.</span></div>
+    <div class="live-clock">
+      <span id="time-display"></span>
+      <span id="date-display"></span>
+    </div>
+  </header>
+  <div id="incognito-warn" style="display:none"></div>
+  <div id="app-static"></div>
+  <div id="app-now"></div>
+  <div id="app-grid"></div>
+</div>
+
+<input type="file" id="fileInput" accept="image/*" style="display:none">
+
+<script>
+/* ── STATE ── */
+let schedule = [];
+let imgSrc = null, imgB64 = null, imgMime = null;
+let loading = false, err = null, showManual = false;
+let nextId = 20;
+let manualRows = [
+  { id:1, period:'1', subject:'', room:'', start:'08:00', end:'08:50' },
+  { id:2, period:'2', subject:'', room:'', start:'08:55', end:'09:45' },
+  { id:3, period:'3', subject:'', room:'', start:'09:50', end:'10:40' },
+  { id:4, period:'4', subject:'', room:'', start:'10:45', end:'11:35' },
+];
+let lastStaticKey = '';
+let lastScheduleHash = '';
+let gridFresh = false;
+
+/* ── STORAGE ── */
+const STORAGE_KEY = 'schedule_app_v1';
+
+function saveSchedule() {
+  if (!schedule.length) return;
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      schedule,
+      savedAt: Date.now()
+    }));
+  } catch(e) {}
+}
+
+function loadSchedule() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return false;
+    const data = JSON.parse(raw);
+    if (!data.schedule || !data.schedule.length) return false;
+    // Restore startMins/endMins in case they weren't saved
+    schedule = data.schedule.map(r => ({
+      ...r,
+      startMins: r.startMins != null ? r.startMins : parseTimeMins(r.start),
+      endMins:   r.endMins   != null ? r.endMins   : parseTimeMins(r.end)
+    }));
+    return true;
+  } catch(e) { return false; }
+}
+
+function clearSaved() {
+  try { localStorage.removeItem(STORAGE_KEY); } catch(e) {}
+}
+
+function savedAt() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    return data.savedAt || null;
+  } catch(e) { return null; }
+}
+
+function fmtSavedAt(ts) {
+  if (!ts) return '';
+  const d = new Date(ts);
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  let h = d.getHours(), m = d.getMinutes();
+  const ap = h >= 12 ? 'PM' : 'AM';
+  h = h > 12 ? h-12 : h===0 ? 12 : h;
+  return `Saved ${days[d.getDay()]} ${months[d.getMonth()]} ${d.getDate()} at ${h}:${String(m).padStart(2,'0')} ${ap}`;
+}
+
+/* ── TIME HELPERS ── */
+function parseTimeMins(s) {
+  if (!s) return null;
+  const m = s.match(/(\d{1,2}):(\d{2})\s*(am|pm)?/i);
+  if (!m) return null;
+  let h = +m[1], min = +m[2];
+  const ap = (m[3]||'').toLowerCase();
+  if (ap === 'pm' && h < 12) h += 12;
+  if (ap === 'am' && h === 12) h = 0;
+  return h * 60 + min;
+}
+function fmt12(s) {
+  const m = s.match(/(\d{1,2}):(\d{2})\s*(am|pm)?/i);
+  if (!m) return s;
+  let h = +m[1], min = +m[2];
+  const ap = (m[3]||'').toLowerCase();
+  if (ap === 'pm' && h < 12) h += 12;
+  if (ap === 'am' && h === 12) h = 0;
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const hh = h > 12 ? h - 12 : h === 0 ? 12 : h;
+  return `${hh}:${String(min).padStart(2,'0')} ${ampm}`;
+}
+function nowSecs() {
+  const d = new Date();
+  return d.getHours()*3600 + d.getMinutes()*60 + d.getSeconds();
+}
+function fmtCd(secs) {
+  secs = Math.max(0, Math.round(secs));
+  const h = Math.floor(secs/3600);
+  const m = Math.floor((secs%3600)/60);
+  const s = secs%60;
+  if (h > 0) return `${h}h ${String(m).padStart(2,'0')}m`;
+  return `${m}:${String(s).padStart(2,'0')}`;
+}
+function fmtClock() {
+  const d = new Date();
+  let h = d.getHours(), m = d.getMinutes(), s = d.getSeconds();
+  const ap = h >= 12 ? 'PM' : 'AM';
+  h = h > 12 ? h-12 : h===0 ? 12 : h;
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')} ${ap}`;
+}
+function fmtDate() {
+  const d = new Date();
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${days[d.getDay()]} ${months[d.getMonth()]} ${d.getDate()}`;
+}
+
+/* ── STATE KEYS ── */
+function staticKey() {
+  return `${schedule.length > 0}_${showManual}_${loading}_${!!err}_${!!imgSrc}`;
+}
+function scheduleHash() {
+  return schedule.map(s => `${s.subject}${s.start}${s.end}`).join('|');
+}
+
+/* ── CURRENT/NEXT PERIOD ── */
+function getIndices() {
+  const nm = nowSecs() / 60;
+  let curIdx = -1, nextIdx = -1;
+  for (let i = 0; i < schedule.length; i++) {
+    const s = schedule[i];
+    if (s.startMins != null && s.endMins != null && nm >= s.startMins && nm < s.endMins) { curIdx = i; break; }
+  }
+  for (let i = 0; i < schedule.length; i++) {
+    if (schedule[i].startMins != null && schedule[i].startMins > nm) { nextIdx = i; break; }
+  }
+  return { curIdx, nextIdx };
+}
+
+/* ── AI IMAGE READ (Google Gemini) ── */
+async function readImage(b64, mime) {
+  const GEMINI_KEY = 'AQ.Ab8RN6JnIqyJqRUpUlvpMhIxJkfyh64-S0_-LqcYEKEE29nNFQ';
+  const resp = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{
+          parts: [
+            { inline_data: { mime_type: mime, data: b64 } },
+            { text: 'Extract the class schedule from this image. Return ONLY a valid JSON array with no markdown or backticks. Each item: {"period":"1","subject":"Math","room":"B204","start":"8:00 AM","end":"8:50 AM"}. Use 12-hour time with AM/PM. If room is missing use "". Return [] if no schedule found.' }
+          ]
+        }]
+      })
+    }
+  );
+  const data = await resp.json();
+  if (data.error) throw new Error(data.error.message);
+  const text = data.candidates?.[0]?.content?.parts?.map(p => p.text||'').join('') || '';
+  const clean = text.replace(/```json|```/g,'').trim();
+  return JSON.parse(clean);
+}
+
+/* ── FILE HANDLING ── */
+function handleFile(file) {
+  if (!file || !file.type.startsWith('image/')) return;
+  const reader = new FileReader();
+  reader.onload = async e => {
+    imgSrc = e.target.result;
+    imgB64 = imgSrc.split(',')[1];
+    imgMime = file.type;
+    loading = true; err = null;
+    forceStaticRender();
+    try {
+      const result = await readImage(imgB64, imgMime);
+      if (!Array.isArray(result) || result.length === 0) {
+        err = 'No schedule found in that photo. Try a clearer shot or enter manually.';
+      } else {
+        schedule = result.map(r => ({ ...r, startMins: parseTimeMins(r.start), endMins: parseTimeMins(r.end) }));
+        showManual = false;
+        saveSchedule();
+      }
+    } catch(e) {
+      if (e.message === 'NO_KEY') {
+        err = 'Paste your free Gemini API key above, then try again.';
+      } else if (e.message && e.message.toLowerCase().includes('api key')) {
+        err = 'That API key looks invalid. Double-check it and try again.';
+      } else {
+        err = 'Could not read the schedule. Check your connection and try again.';
+      }
+    }
+    loading = false;
+    forceStaticRender();
+    renderGrid(true);
+    renderNow();
+  };
+  reader.readAsDataURL(file);
+}
+document.getElementById('fileInput').addEventListener('change', e => handleFile(e.target.files[0]));
+
+/* ── MANUAL FORM ── */
+function addRow() {
+  const last = manualRows[manualRows.length-1];
+  manualRows.push({ id: nextId++, period: String(manualRows.length+1), subject:'', room:'', start: last.end||'', end:'' });
+  forceStaticRender();
+}
+function removeRow(id) {
+  if (manualRows.length <= 1) return;
+  manualRows = manualRows.filter(r => r.id !== id);
+  forceStaticRender();
+}
+function applyManual() {
+  const valid = manualRows.filter(r => r.subject.trim() && r.start && r.end);
+  if (!valid.length) { err = 'Add at least one class with a name and times.'; forceStaticRender(); return; }
+  schedule = valid.map(r => ({
+    period: r.period, subject: r.subject.trim(), room: r.room.trim(),
+    start: fmt12(r.start), end: fmt12(r.end),
+    startMins: parseTimeMins(r.start), endMins: parseTimeMins(r.end)
+  }));
+  showManual = false; err = null;
+  saveSchedule();
+  forceStaticRender();
+  renderGrid(true);
+  renderNow();
+}
+
+/* ── DEMO ── */
+function loadDemo() {
+  const base = 8 * 60;
+  schedule = [
+    { period:'1', subject:'English',  room:'A101',      start:'8:00 AM',  end:'8:50 AM',  startMins:base,     endMins:base+50  },
+    { period:'2', subject:'Math',     room:'B204',      start:'8:55 AM',  end:'9:45 AM',  startMins:base+55,  endMins:base+105 },
+    { period:'3', subject:'Biology',  room:'C12',       start:'9:50 AM',  end:'10:40 AM', startMins:base+110, endMins:base+160 },
+    { period:'4', subject:'History',  room:'A203',      start:'10:45 AM', end:'11:35 AM', startMins:base+165, endMins:base+215 },
+    { period:'L', subject:'Lunch',    room:'Cafeteria', start:'11:40 AM', end:'12:10 PM', startMins:base+220, endMins:base+250 },
+    { period:'5', subject:'Physics',  room:'B108',      start:'12:15 PM', end:'1:05 PM',  startMins:base+255, endMins:base+305 },
+    { period:'6', subject:'Spanish',  room:'A305',      start:'1:10 PM',  end:'2:00 PM',  startMins:base+310, endMins:base+360 },
+    { period:'7', subject:'PE',       room:'Gym',       start:'2:05 PM',  end:'2:55 PM',  startMins:base+365, endMins:base+415 },
+  ];
+  saveSchedule();
+  forceStaticRender();
+  renderGrid(true);
+  renderNow();
+}
+
+/* ── GLYPH BAR ── */
+function buildGlyph(pct, segs=40) {
+  const lit = Math.round(Math.min(1,Math.max(0,pct)) * segs);
+  let h = '';
+  for (let i = 0; i < segs; i++) {
+    if (i < lit) h += '<div class="gs on"></div>';
+    else if (i === lit) h += '<div class="gs dim"></div>';
+    else h += '<div class="gs"></div>';
+  }
+  return h;
+}
+
+/* ── RENDER: STATIC AREA ── */
+function forceStaticRender() {
+  lastStaticKey = ''; // force rebuild
+}
+
+function renderStatic() {
+  const key = staticKey();
+  if (key === lastStaticKey) return;
+  lastStaticKey = key;
+
+  let h = '';
+
+  if (loading) {
+    h += `<div class="loading-bar"><div class="dots"><span></span><span></span><span></span></div>Reading your schedule...</div>`;
+  }
+  if (err) {
+    h += `<div class="err-bar">${err}</div>`;
+  }
+
+  if (schedule.length === 0) {
+    h += `<div class="upload-zone" id="dz">
+      <div class="upload-icon">
+        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      </div>
+      <h3>Add your schedule</h3>
+      <p>Take a photo of your schedule card and AI will read it automatically</p>
+      <button class="btn primary" id="uploadBtn">Upload a photo</button>
+      <div class="upload-or">or</div>
+    </div>
+    <div class="btn-row">
+      <button class="btn" onclick="showManual=!showManual;forceStaticRender()">Enter manually</button>
+      <button class="btn" onclick="loadDemo()">Try a demo</button>
+    </div>`;
+  } else {
+    const ts = savedAt();
+    h += `<div class="btn-row">
+      ${imgSrc ? `<img src="${imgSrc}" class="img-thumb" alt="schedule photo">` : ''}
+      <button class="btn" onclick="schedule=[];imgSrc=null;imgB64=null;err=null;clearSaved();forceStaticRender();renderGrid(true);renderNow()">Start over</button>
+      <button class="btn" onclick="showManual=!showManual;forceStaticRender()">Edit</button>
+      ${ts ? `<span class="saved-badge">${fmtSavedAt(ts)}</span>` : ''}
+    </div>`;
+  }
+
+  if (showManual) {
+    h += `<div class="manual-form"><h3>Your schedule</h3>`;
+    manualRows.forEach((r, i) => {
+      h += `<div class="m-row">
+        <input placeholder="Period" value="${r.period}" oninput="manualRows[${i}].period=this.value" style="max-width:52px">
+        <input placeholder="Class name" value="${r.subject}" oninput="manualRows[${i}].subject=this.value" style="flex:2">
+        <input placeholder="Room" value="${r.room}" oninput="manualRows[${i}].room=this.value" style="max-width:74px">
+        <input type="time" value="${r.start}" oninput="manualRows[${i}].start=this.value" style="max-width:108px">
+        <input type="time" value="${r.end}" oninput="manualRows[${i}].end=this.value" style="max-width:108px">
+        <button class="del" onclick="removeRow(${r.id})">×</button>
+      </div>`;
+    });
+    h += `<div class="btn-row" style="margin-top:10px;margin-bottom:0">
+      <button class="btn" onclick="addRow()">+ Add class</button>
+      <button class="btn primary" onclick="applyManual()">Save</button>
+      <button class="btn" onclick="showManual=false;err=null;forceStaticRender()">Cancel</button>
+    </div></div>`;
+  }
+
+  document.getElementById('app-static').innerHTML = h;
+
+  // Attach upload zone handlers (only after setting innerHTML)
+  const dz = document.getElementById('dz');
+  if (dz) {
+    dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('over'); });
+    dz.addEventListener('dragleave', () => dz.classList.remove('over'));
+    dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('over'); handleFile(e.dataTransfer.files[0]); });
+  }
+  const upBtn = document.getElementById('uploadBtn');
+  if (upBtn) {
+    upBtn.addEventListener('click', e => { e.stopPropagation(); document.getElementById('fileInput').click(); });
+  }
+  // Zone click (not button) opens file picker
+  if (dz) {
+    dz.addEventListener('click', e => {
+      if (e.target === dz || e.target.tagName === 'H3' || e.target.tagName === 'P' || e.target.closest('.upload-icon')) {
+        document.getElementById('fileInput').click();
+      }
+    });
+  }
+}
+
+/* ── RENDER: NOW / NEXT / DONE ── */
+function renderNow() {
+  const ns = nowSecs();
+  const nm = ns / 60;
+  const { curIdx, nextIdx } = getIndices();
+  const cur = curIdx >= 0 ? schedule[curIdx] : null;
+  const allDone = schedule.length > 0 && curIdx === -1 && nextIdx === -1;
+
+  // Next period: if in current, next is curIdx+1; if not, it's nextIdx
+  const nxtIdx = curIdx >= 0 ? curIdx + 1 : nextIdx;
+  const nxt = nxtIdx >= 0 && nxtIdx < schedule.length ? schedule[nxtIdx] : null;
+
+  let h = '';
+
+  if (cur) {
+    const totalSecs = (cur.endMins - cur.startMins) * 60;
+    const elapsed = ns - cur.startMins * 60;
+    const rem = Math.max(0, cur.endMins * 60 - ns);
+    const pct = Math.min(1, Math.max(0, elapsed / totalSecs));
+
+    h += `<div class="now-card">
+      <div class="now-top">
+        <div class="now-eyebrow"><div class="live-dot"></div>In session</div>
+        <div class="now-subject">${cur.subject}</div>
+        <div class="now-meta">${cur.room ? `Room ${cur.room} · ` : ''}${cur.start} to ${cur.end}</div>
+      </div>
+      <div class="now-countdown-row">
+        <div>
+          <div class="countdown-label">Time left</div>
+          <div class="countdown-display">${fmtCd(rem)}</div>
+        </div>
+        <div style="text-align:right">
+          <div class="countdown-label">Time used</div>
+          <div class="elapsed-num">${fmtCd(Math.max(0,elapsed))}</div>
+        </div>
+      </div>
+      <div class="glyph-bar">${buildGlyph(pct)}</div>
+    </div>`;
+  } else if (allDone) {
+    h += `<div class="done-card">
+      <div class="big">That's a wrap for today</div>
+      <div class="sub">See you tomorrow</div>
+    </div>`;
+  } else if (nxt && !cur) {
+    const secsUntil = Math.max(0, nxt.startMins * 60 - ns);
+    h += `<div class="next-card">
+      <div>
+        <div class="next-eyebrow">Starting soon</div>
+        <div class="next-subject">${nxt.subject}</div>
+        <div class="next-meta">${nxt.room ? `Room ${nxt.room} · ` : ''}${nxt.start}</div>
+      </div>
+      <div class="next-time">${fmtCd(secsUntil)}</div>
+    </div>`;
+  }
+
+  if (cur && nxt) {
+    const secsUntilNxt = Math.max(0, nxt.startMins * 60 - ns);
+    h += `<div class="next-card">
+      <div>
+        <div class="next-eyebrow">Up next</div>
+        <div class="next-subject">${nxt.subject}</div>
+        <div class="next-meta">${nxt.room ? `Room ${nxt.room} · ` : ''}${nxt.start}</div>
+      </div>
+      <div class="next-time">${fmtCd(secsUntilNxt)}</div>
+    </div>`;
+  }
+
+  document.getElementById('app-now').innerHTML = h;
+}
+
+/* ── RENDER: GRID (rebuild only on schedule change) ── */
+function renderGrid(fresh=false) {
+  const hash = scheduleHash();
+  if (!fresh && hash === lastScheduleHash) { updateGridCountdowns(); return; }
+  lastScheduleHash = hash;
+  gridFresh = true;
+
+  if (schedule.length === 0) {
+    document.getElementById('app-grid').innerHTML = '';
+    return;
+  }
+
+  const ns = nowSecs();
+  const nm = ns / 60;
+  const { curIdx, nextIdx } = getIndices();
+
+  let h = `<div class="section-hd">Today's classes</div><div class="grid grid-fresh">`;
+  schedule.forEach((s, i) => {
+    const past = s.endMins != null && nm >= s.endMins;
+    const isCur = i === curIdx;
+    const isNxt = !isCur && i === nextIdx;
+    let cls = 'p-card';
+    if (isCur) cls += ' current';
+    else if (past) cls += ' past';
+    else if (isNxt) cls += ' upcoming';
+
+    let cdHtml = '';
+    if (isCur) {
+      const rem = Math.max(0, s.endMins * 60 - ns);
+      cdHtml = `<div class="p-cd live" id="pcd-${i}">${fmtCd(rem)} left</div>`;
+    } else if (!past && s.startMins != null) {
+      const until = s.startMins * 60 - ns;
+      if (until > 0) cdHtml = `<div class="p-cd" id="pcd-${i}">in ${fmtCd(until)}</div>`;
+    } else if (past) {
+      cdHtml = `<div class="p-done" id="pcd-${i}">Done</div>`;
+    }
+
+    h += `<div class="${cls}" id="pc-${i}">
+      <div class="p-num${isCur?' cur':''}">Period ${s.period}${isCur?' · Now':''}</div>
+      <div class="p-subject">${s.subject}</div>
+      ${s.room ? `<div class="p-room">Room ${s.room}</div>` : ''}
+      <div class="p-time">${s.start} to ${s.end}</div>
+      ${cdHtml}
+    </div>`;
+  });
+  h += '</div>';
+  document.getElementById('app-grid').innerHTML = h;
+
+  // Remove fresh class after animation finishes so re-renders don't re-animate
+  setTimeout(() => {
+    const g = document.querySelector('.grid-fresh');
+    if (g) g.classList.remove('grid-fresh');
+    gridFresh = false;
+  }, 800);
+}
+
+/* ── IN-PLACE COUNTDOWN UPDATE (called every second after initial grid render) ── */
+function updateGridCountdowns() {
+  if (gridFresh) return; // let animation finish first
+  const ns = nowSecs();
+  const nm = ns / 60;
+  const { curIdx } = getIndices();
+
+  schedule.forEach((s, i) => {
+    const el = document.getElementById(`pcd-${i}`);
+    const card = document.getElementById(`pc-${i}`);
+    if (!el || !card) return;
+
+    const past = s.endMins != null && nm >= s.endMins;
+    const isCur = i === curIdx;
+
+    if (isCur) {
+      const rem = Math.max(0, s.endMins * 60 - ns);
+      el.textContent = fmtCd(rem) + ' left';
+      el.className = 'p-cd live';
+      card.className = 'p-card current';
+    } else if (past) {
+      el.textContent = 'Done';
+      el.className = 'p-done';
+      card.className = 'p-card past';
+    } else if (s.startMins != null) {
+      const until = s.startMins * 60 - ns;
+      if (until > 0) {
+        el.textContent = 'in ' + fmtCd(until);
+        el.className = 'p-cd';
+      }
+    }
+  });
+}
+
+/* ── TICK: orchestrates all rendering ── */
+function tick() {
+  // Clock (always in-place, no DOM rebuild)
+  const td = document.getElementById('time-display');
+  const dd = document.getElementById('date-display');
+  if (td) td.textContent = fmtClock();
+  if (dd) dd.textContent = fmtDate();
+
+  // Static area: only rebuilds if state changed
+  renderStatic();
+
+  // Now/next card: always rebuilds (small, no inputs, no stagger)
+  if (schedule.length > 0) renderNow();
+
+  // Grid: full rebuild on schedule change, text-only update otherwise
+  if (schedule.length > 0) renderGrid();
+}
+
+// Detect incognito / private browsing by probing storage quota
+// Most browsers restrict storage in private mode
+function checkIncognito() {
+  const warn = document.getElementById('incognito-warn');
+  if (!warn) return;
+
+  // Method 1: Safari private mode blocks localStorage writes silently
+  try {
+    const testKey = '__sched_test__';
+    localStorage.setItem(testKey, '1');
+    localStorage.removeItem(testKey);
+  } catch(e) {
+    showIncognitoWarn(warn);
+    return;
+  }
+
+  // Method 2: Chrome/Edge incognito limits storage quota to ~120MB
+  // navigator.storage.estimate is unavailable or reports tiny quota in private mode
+  if (navigator.storage && navigator.storage.estimate) {
+    navigator.storage.estimate().then(est => {
+      // Regular mode typically reports 1GB+; incognito is usually under 150MB
+      if (est.quota && est.quota < 150 * 1024 * 1024) {
+        showIncognitoWarn(warn);
+      }
+    }).catch(() => {});
+  }
+
+  // Method 3: Firefox private mode — indexedDB may throw
+  try {
+    const req = indexedDB.open('__sched_idb_test__');
+    req.onerror = () => showIncognitoWarn(warn);
+    req.onsuccess = e => {
+      e.target.result.close();
+      indexedDB.deleteDatabase('__sched_idb_test__');
+    };
+  } catch(e) {
+    showIncognitoWarn(warn);
+  }
+}
+
+function showIncognitoWarn(el) {
+  el.style.display = 'block';
+  el.innerHTML = `<div class="warn-bar">
+    <strong>You might be in private / incognito mode</strong>
+    Your schedule won't be saved. Every time you close this tab your data will be gone and you'll need to scan again.
+    Open this file in your regular browser window to keep your schedule saved between visits.
+  </div>`;
+}
+
+checkIncognito();
+
+// Load saved schedule on startup — no API call needed
+if (loadSchedule()) {
+  renderGrid(true);
+  renderNow();
+}
+
+tick();
+setInterval(tick, 1000);
+</script>
+</body>
+</html>
