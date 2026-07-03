@@ -1,7 +1,14 @@
 const GEMINI_KEY = 'AQ.Ab8RN6JbA7QuWbCnJ3gY2JzDVVZE4V0Bwet9VMW4sY43kON69A';
 
 export default {
-  async fetch(request) {
+  async fetch(request, env) {
+    const url = new URL(request.url);
+
+    // Only intercept /api/scan — everything else serves normally
+    if (url.pathname !== '/api/scan') {
+      return env.ASSETS.fetch(request);
+    }
+
     // Handle CORS preflight
     if (request.method === 'OPTIONS') {
       return new Response(null, {
